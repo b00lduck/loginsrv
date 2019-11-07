@@ -16,9 +16,10 @@ func TestAuth_UnknownUser(t *testing.T) {
 	auth, err := NewAuth(u, time.Second, false)
 	NoError(t, err)
 
-	authenticated, err := auth.Authenticate("unknown", "secret")
+	authenticated, roles, err := auth.Authenticate("unknown", "secret")
 	NoError(t, err)
 	False(t, authenticated)
+	Equal(t, []string{}, roles)
 }
 
 func TestAuth_KnownUser(t *testing.T) {
@@ -29,9 +30,10 @@ func TestAuth_KnownUser(t *testing.T) {
 	auth, err := NewAuth(u, time.Second, false)
 	NoError(t, err)
 
-	authenticated, err := auth.Authenticate("bob-bcrypt", "s3krud")
+	authenticated, roles, err := auth.Authenticate("bob-bcrypt", "s3krud")
 	NoError(t, err)
 	False(t, authenticated)
+	Equal(t, []string{}, roles)
 }
 
 func TestAuth_ValidCredentials(t *testing.T) {
@@ -42,9 +44,10 @@ func TestAuth_ValidCredentials(t *testing.T) {
 	auth, err := NewAuth(u, time.Second, false)
 	NoError(t, err)
 
-	authenticated, err := auth.Authenticate("bob-bcrypt", "secret")
+	authenticated, roles, err := auth.Authenticate("bob-bcrypt", "secret")
 	NoError(t, err)
 	True(t, authenticated)
+	Equal(t, []string{}, roles)
 }
 
 func TestAuth_InvalidUrl(t *testing.T) {
@@ -53,8 +56,10 @@ func TestAuth_InvalidUrl(t *testing.T) {
 	auth, err := NewAuth(invalidUrl, time.Second, false)
 	NoError(t, err)
 
-	_, err = auth.Authenticate("foo", "bar")
+	authenticated, roles, err := auth.Authenticate("foo", "bar")
 	Error(t, err)
+	False(t, authenticated)
+	Equal(t, []string{}, roles)
 }
 
 func TestAuth_InvalidHost(t *testing.T) {
@@ -63,6 +68,8 @@ func TestAuth_InvalidHost(t *testing.T) {
 	auth, err := NewAuth(invalidServer, time.Second, false)
 	NoError(t, err)
 
-	_, err = auth.Authenticate("foo", "bar")
+	authenticated, roles, err := auth.Authenticate("foo", "bar")
 	Error(t, err)
+	False(t, authenticated)
+	Equal(t, []string{}, roles)
 }

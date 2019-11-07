@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -26,7 +27,7 @@ func NewAuth(upstream *url.URL, timeout time.Duration, skipverify bool) (*Auth, 
 }
 
 // Authenticate the user
-func (a *Auth) Authenticate(username, password string) (bool, error) {
+func (a *Auth) Authenticate(username, password string) (bool, []string, error) {
 	c := &http.Client{
 		Timeout: a.timeout,
 	}
@@ -39,19 +40,35 @@ func (a *Auth) Authenticate(username, password string) (bool, error) {
 
 	req, err := http.NewRequest("GET", a.upstream.String(), nil)
 	if err != nil {
-		return false, err
+		return false, []string{}, err
 	}
 
 	req.SetBasicAuth(username, password)
 
 	resp, err := c.Do(req)
 	if err != nil {
-		return false, err
+		return false, []string{}, err
 	}
 
 	if resp.StatusCode != 200 {
-		return false, nil
+		return false, []string{}, nil
 	}
 
-	return true, nil
+	groups := a.extractgroupsFromHeader(resp, "Auth-Roles")
+	return true, groups, nil
+}
+
+func (a *Auth) extractgroupsFromHeader(resp *http.Response, headerName string) []string {
+	groupsString := resp.Header.Get(headerName)
+	if len(groupsString) == 0 {
+		return []string{}
+	}
+
+	groupsSlice := strings.Split(groupsString, ",")
+
+	ret := []string{}
+	for _, role := range groupsSlice {
+		ret = append(ret, strings.TrimSpace(role))
+	}
+	return ret
 }

@@ -75,11 +75,12 @@ func NewBackend(upstream *url.URL, timeout time.Duration, skipverify bool) (*Bac
 
 // Authenticate the user
 func (sb *Backend) Authenticate(username, password string) (bool, model.UserInfo, error) {
-	authenticated, err := sb.auth.Authenticate(username, password)
+	authenticated, groups, err := sb.auth.Authenticate(username, password)
 	if authenticated && err == nil {
 		return authenticated, model.UserInfo{
 			Origin: ProviderName,
 			Sub:    username,
+			Groups: groups,
 		}, err
 	}
 	return false, model.UserInfo{}, err
